@@ -7,7 +7,7 @@ from PIL import Image
 import os
 
 # 是否开启训练
-TRAIN = False
+TRAIN = True
 MODEL_PATH = "mnist_model.pth"
 
 class Net(torch.nn.Module):
@@ -66,16 +66,31 @@ def train_model():
     print("initial accuracy:", evaluate(test_data, net))
 
     # 添加 L2 正则化，通过 weight_decay 参数
-    # optimizer = torch.optim.Adam(net.parameters(), lr=0.001, weight_decay=1e-4)
-    optimizer = torch.optim.SGD(net.parameters(), lr=0.01, momentum=0.9, weight_decay=1e-4) #SGD优化器
-    for epoch in range(100):  # 每个轮次
+    # optimizer = torch.optim.Adam(net.parameters(), lr=0.001, weight_decay=1e-4) #Adam优化
+    optimizer = torch.optim.SGD(net.parameters(), lr=0.01, momentum=0.9, weight_decay=1e-4) #SGD优化
+
+    accuracy_list = []
+    for epoch in range(10):  # 每个轮次
         for (x, y) in train_data:
             net.zero_grad()    # 初始化
             output = net.forward(x.view(-1, 28*28))   # 正向传播
             loss = torch.nn.functional.cross_entropy(output, y)   # 使用CrossEntropyLoss计算损失差值
             loss.backward()              # 反向误差传播
             optimizer.step()             # 优化网络参数
+        acc = evaluate(test_data, net)
+        accuracy_list.append(acc)
         print(f"epoch {epoch+1}, accuracy: {evaluate(test_data, net)}")
+
+    # 绘制训练准确率曲线
+    plt.figure(figsize=(10, 5))
+    plt.plot(range(1, len(accuracy_list) + 1), accuracy_list, label='Test Accuracy')
+    plt.xlabel("Epoch")
+    plt.ylabel("Accuracy")
+    plt.title("Training Accuracy over Epochs")
+    plt.grid(True)
+    plt.legend()
+    plt.savefig("train_accuracy.png")
+    plt.show()
 
     # 保存模型
     print("Training complete.")
